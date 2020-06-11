@@ -10,19 +10,6 @@ import csv
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/api/block_models/')
-def block_models():
-    directory = os.getcwd()
-    names = []
-
-    for filename in os.listdir(directory):
-        name_extension = []
-        if filename.endswith(".csv"):
-            names.append({ 'name': filename.split("_blocks")[0] })
-
-    return json.dumps(names)
-
-@app.route('/api/block_models/<name>/blocks/')
 def show_blocks(name):
     filename = name + "_blocks_reblock.csv"
 
@@ -44,13 +31,43 @@ def show_blocks(name):
                 current_block = lines[line].strip().split(",")
                 for i in range(len(columns)):
                     block[str(columns[i])] = current_block[i]
-
                 blocks.append(block)
+        return blocks
 
-        return json.dumps(blocks)
+@app.route('/')
+def hello():
+    text = 'Hello World'
+    return text
+
+
+@app.route('/api/block_models/', methods=['GET'])
+def block_models():
+    directory = os.getcwd()
+    names = []
+
+    for filename in os.listdir(directory):
+        name_extension = []
+        if filename.endswith(".csv"):
+            names.append({ 'name': filename.split("_blocks")[0] })
+    names_output = {"block_models": names}
+    return json.dumps(names_output)
+
+
+@app.route('/api/block_models/<name>/blocks/')
+def loaded_blocks(name):
+    out = show_blocks(name)
+    return json.dumps({"block_model": {"blocks": out}})
+
+
+@app.route('/api/block_models/<name>/blocks/<index>/')
+def index_block(name, index):
+    model = show_blocks(name)
+    block = model[int(index)]
+    return json.dumps({"block": block})
 
 
 if __name__ == "__main__":
+    app.run(port=8001)
     if sys.argv[1] == '-L':
         print(loadModelArguments(sys.argv[2:]))
     elif sys.argv[1] == '-P':
