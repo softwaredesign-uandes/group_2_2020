@@ -30,7 +30,10 @@ def show_blocks(name):
             elif line > offset:
                 current_block = lines[line].strip().split(",")
                 for i in range(len(columns)):
-                    block[str(columns[i])] = current_block[i]
+                    if (str(columns[i]) == "id"):
+                        block['index'] = current_block[i]
+                    else:
+                        block[str(columns[i])] = current_block[i]
                 blocks.append(block)
         return blocks
 
@@ -49,24 +52,28 @@ def block_models():
         name_extension = []
         if filename.endswith(".csv"):
             names.append({ 'name': filename.split("_blocks")[0] })
-    return json.dumps(names_output)
+
+    return json.dumps(names)
 
 
 @app.route('/api/block_models/<name>/blocks/')
 def loaded_blocks(name):
-    out = show_blocks(name)
-    return json.dumps({"block_model": {"blocks": out}})
+    return json.dumps(show_blocks(name))
 
 
 @app.route('/api/block_models/<name>/blocks/<index>/')
 def index_block(name, index):
     model = show_blocks(name)
-    block = model[int(index)]
+    for i in model:
+        print(i['index'])
+        if int(i['index']) == int(index):
+            block = i
     return json.dumps({"block": block})
 
 
 if __name__ == "__main__":
-    app.run(port=8001)
+    #app.run(port=8001)
+    app.run(port=5000)
     if sys.argv[1] == '-L':
         print(loadModelArguments(sys.argv[2:]))
     elif sys.argv[1] == '-P':
