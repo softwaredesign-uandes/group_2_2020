@@ -49,7 +49,6 @@ def block_models():
         name_extension = []
         if filename.endswith(".csv"):
             names.append({ 'name': filename.split("_blocks")[0] })
-    names_output = {"block_models": names}
     return json.dumps(names_output)
 
 
