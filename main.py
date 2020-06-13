@@ -1,73 +1,107 @@
 import os
 import csv
 import sys, getopt
-from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments
-from flask import Flask
+from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel, getModelNames, getModelBlock, getBlockModelObject
+from flask import Flask, flash, request, redirect, url_for, Response, jsonify
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
+from werkzeug.utils import secure_filename
+from flask_api import status
 import json
 import csv
+import requests
 
 app = Flask(__name__)
 CORS(app)
 
-def show_blocks(name):
-    filename = name + "_blocks_reblock.csv"
+UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = {'blocks', 'txt'}
 
-    if not os.path.exists(filename):
-        filename = name + "_blocks.csv"
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+    """Return JSON instead of HTML for HTTP errors."""
+    response = e.get_response()
+    response.data = json.dumps({
+        "code": e.code,
+        "name": e.name,
+        "description": e.description,
+    })
+    response.content_type = "application/json"
+    return response
 
-    with open(filename, 'r') as csv_file:
-        lines = csv_file.readlines()
-        offset = 3 + int(lines[3])
 
-        blocks = []
-        columns = []
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-        for line in range(len(lines)):
-            block = {}
-            if line == 0:
-                columns = lines[line].strip().split(",")
-            elif line > offset:
-                current_block = lines[line].strip().split(",")
-                for i in range(len(columns)):
-                    block[str(columns[i])] = current_block[i]
-                blocks.append(block)
-        return blocks
 
-@app.route('/')
-def hello():
-    text = 'Hello World'
-    return text
+@app.route('/api/block_models/load_model/', methods=['GET', 'POST'])
+def load_block_model():
+    status_code = {status.HTTP_200_OK:  'OK'}
+    if request.method == 'POST':
+        if 'blocks' not in request.files or 'columns' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        blocks = request.files['blocks']
+        columns = request.files['columns']
+        if blocks.filename == '' or columns.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if blocks and columns and allowed_file(blocks.filename) and allowed_file(columns.filename):
+            blocks_filename = secure_filename(blocks.filename)
+            blocks.save(os.path.join(app.config['UPLOAD_FOLDER'], blocks_filename))
+            columns_filename = secure_filename(columns.filename)
+            columns.save(os.path.join(app.config['UPLOAD_FOLDER'], columns_filename))
+            LoadBlockModel(blocks.filename, columns.filename)
+            return status_code
+    return status_code
+    
+
+@app.route('/api/block_models/<name>/reblock/<x>/<y>/<z>', methods=['GET'])
+def reblock_model(name, x, y, z):
+    
+    status_code = {status.HTTP_200_OK:  'OK'}
+
+    inputfile = name + "_blocks_reblock.csv"
+
+    if not os.path.exists(inputfile):
+        inputfile = name + "_blocks.csv"
+    
+    apiReblockModel(inputfile, x, y, z)
+
+    return status_code
 
 
 @app.route('/api/block_models/', methods=['GET'])
 def block_models():
-    directory = os.getcwd()
-    names = []
-
-    for filename in os.listdir(directory):
-        name_extension = []
-        if filename.endswith(".csv"):
-            names.append({ 'name': filename.split("_blocks")[0] })
-    names_output = {"block_models": names}
-    return json.dumps(names_output)
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
+    names = getModelNames()
+    if ff['restful_response']:
+        return json.dumps({'block_models': names})
+    return json.dumps(names)
 
 
-@app.route('/api/block_models/<name>/blocks/')
+@app.route('/api/block_models/<name>/blocks/', methods=['GET'])
 def loaded_blocks(name):
-    out = show_blocks(name)
-    return json.dumps({"block_model": {"blocks": out}})
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
+    blocks = getBlockModelObject(name, ff['restful_response'])
+    return json.dumps(blocks)
 
 
-@app.route('/api/block_models/<name>/blocks/<index>/')
+@app.route('/api/block_models/<name>/blocks/<index>/', methods=['GET'])
 def index_block(name, index):
-    model = show_blocks(name)
-    block = model[int(index)]
-    return json.dumps({"block": block})
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
+    if ff['block_info']:
+        block = getModelBlock(name, index)
+        return json.dumps({"block": block})
 
 
 if __name__ == "__main__":
+    app.secret_key = "SUPER SECRET KEY"
+    app.config['SESSION_TYPE'] = 'filesystem'
     app.run(port=8001)
+    #app.run(port=5000)
     if sys.argv[1] == '-L':
         print(loadModelArguments(sys.argv[2:]))
     elif sys.argv[1] == '-P':

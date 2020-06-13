@@ -180,7 +180,7 @@ def CreateBlockModel(input_name):
     return BlockModel(columns, blocks, block_map)
 
 def LoadBlockModel(input_name, columns_name):
-
+    print("loading...")
     block_file = open(input_name, "r")
     lines = block_file.readlines()
     block_file.close()
@@ -329,3 +329,117 @@ def reblockArguments(argv):
     reblock_file.close()
 
     print(len(blocks), len(blocks[0]), len(blocks[0][0]))
+
+def apiReblockModel(inputfile, x, y, z):
+    block_model = CreateBlockModel(inputfile)
+    blocks = block_model.reBlock(int(x), int(y), int(z))
+
+    original_file = open(inputfile, 'r')
+    model_name = inputfile.split('.')[0]
+    reblock_file = open(model_name+'_reblock.csv', 'w', newline='')
+
+    column_line = original_file.readline()
+    reblock_file.writelines(column_line)
+    classification_line = original_file.readline()
+    reblock_file.write(classification_line)
+    mass_line = original_file.readline()
+    reblock_file.writelines(mass_line)
+    minerals_amount_line = original_file.readline()
+    reblock_file.writelines(minerals_amount_line)
+
+    minerals_amount = int(minerals_amount_line)
+    for mineral in range(minerals_amount):
+        reblock_file.writelines(original_file.readline())
+
+    original_file.close()
+
+    for x in blocks:
+        for y in x:
+            for block in y:
+                if block is None:
+                    continue
+                line = ""
+                for i in range(len(block.values)-1):
+                    line += str(block.values[i]) + ','
+                line += str(block.values[-1]) + '\n'
+                reblock_file.writelines(line)
+    
+    reblock_file.close()
+
+def getModelNames():
+    directory = os.getcwd()
+    names = []
+
+    for filename in os.listdir(directory):
+        name_extension = []
+        if filename.endswith("_blocks.csv"):
+            names.append({ 'name': filename.split("_blocks")[0] })
+        elif filename.endswith('_reblock.csv'):
+            names.append({ 'name': filename.split("_blocks")[0] + '_reblocked' })
+
+    return names
+
+
+def getModelBlock(name, index):
+    blocks = getBlockModel(name)
+
+    block = {}
+    for i in blocks:
+        if int(index) == int(i.getValue('id')):
+            block['index'] = index
+            block['x'] = i.getValue('x')
+            block['y'] = i.getValue('y')
+            block['z'] = i.getValue('z')
+            minerals = {}
+            for j in i.minerals:
+                minerals[j] = i.getMineralGrade(j)
+            block['grades'] = minerals
+            block['mass'] = i.getValue(i.mass)
+            break
+    return block
+
+
+def getBlockModelObject(name, restful):
+    blocks = getBlockModel(name)
+
+    new_blocks = []
+    for i in range(len(blocks)):
+        block = {}
+        for j in range(len(blocks[i].columns)):
+            if blocks[i].columns[j] == 'id':
+                block['index'] = blocks[i].values[j]
+            else:
+                block[blocks[i].columns[j]] = blocks[i].values[j]
+        new_blocks.append(block)
+    
+    if restful:
+        return {'block_model': {'blocks': new_blocks}}
+    return new_blocks
+
+
+def getBlockModel(name):
+    if name.endswith('_reblocked'):
+        filename = name.split('_reblocked')[0] + "_blocks_reblock.csv"
+    else:
+        filename = name + "_blocks.csv"
+
+    blockModel = CreateBlockModel(filename)
+    nBlocks = printNumberOfBlocks(blockModel)
+    if nBlocks > 5000:
+        if nBlocks < 25000:
+            blockModel = blockModel.reBlock(2, 2, 2)
+        elif nBlocks >= 25000:
+            blockModel = blockModel.reBlock(3, 3, 3)
+
+        reblocks = []
+        for i in blockModel:
+            for j in i:
+                for k in j:
+                    if k != None:
+                        reblocks.append(k)
+        return reblocks
+
+    blocks = []
+    for i in blockModel.blocks:
+        blocks.append(i)
+    return blocks

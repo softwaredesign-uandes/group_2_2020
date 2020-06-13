@@ -1,3 +1,5 @@
 Flask
 flask_cors
+flask_api
+requests
 gunicorn
