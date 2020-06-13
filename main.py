@@ -1,74 +1,44 @@
 import os
 import csv
 import sys, getopt
-from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments
-from flask import Flask
+from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, getModelNames, getModelBlock, getBlockModelObject
+from flask import Flask, jsonify
 from flask_cors import CORS
 import json
 import csv
+import requests
 
 app = Flask(__name__)
 CORS(app)
 
-def show_blocks(name):
-    filename = name + "_blocks_reblock.csv"
-
-    if not os.path.exists(filename):
-        filename = name + "_blocks.csv"
-
-    with open(filename, 'r') as csv_file:
-        lines = csv_file.readlines()
-        offset = 3 + int(lines[3])
-
-        blocks = []
-        columns = []
-
-        for line in range(len(lines)):
-            block = {}
-            if line == 0:
-                columns = lines[line].strip().split(",")
-            elif line > offset:
-                current_block = lines[line].strip().split(",")
-                for i in range(len(columns)):
-                    if (str(columns[i]) == "id"):
-                        block['index'] = current_block[i]
-                    else:
-                        block[str(columns[i])] = current_block[i]
-                blocks.append(block)
-        return blocks
-
 @app.route('/')
 def hello():
     text = 'Hello World'
-    return text
+    return requests.get('http://127.0.0.1:8001/api/feature_flags').json
 
 
 @app.route('/api/block_models/', methods=['GET'])
 def block_models():
-    directory = os.getcwd()
-    names = []
-
-    for filename in os.listdir(directory):
-        name_extension = []
-        if filename.endswith(".csv"):
-            names.append({ 'name': filename.split("_blocks")[0] })
-
+    ff = requests.get('http://127.0.0.1:8001/api/feature_flags').json()
+    names = getModelNames()
+    if ff['restful_response']:
+        return json.dumps({'block_models': names})
     return json.dumps(names)
 
 
-@app.route('/api/block_models/<name>/blocks/')
+@app.route('/api/block_models/<name>/blocks/', methods=['GET'])
 def loaded_blocks(name):
-    return json.dumps(show_blocks(name))
+    ff = requests.get('http://127.0.0.1:8001/api/feature_flags').json()
+    blocks = getBlockModelObject(name, ff['restful_response'])
+    return json.dumps(blocks)
 
 
-@app.route('/api/block_models/<name>/blocks/<index>/')
+@app.route('/api/block_models/<name>/blocks/<index>/', methods=['GET'])
 def index_block(name, index):
-    model = show_blocks(name)
-    for i in model:
-        print(i['index'])
-        if int(i['index']) == int(index):
-            block = i
-    return json.dumps({"block": block})
+    ff = requests.get('http://127.0.0.1:8001/api/feature_flags').json()
+    if ff['block_info']:
+        block = getModelBlock(name, index)
+        return json.dumps({"block": block})
 
 
 if __name__ == "__main__":
