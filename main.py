@@ -1,14 +1,15 @@
 import os
 import csv
 import sys, getopt
-from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel
-from flask import Flask, json, flash, request, redirect, url_for, Response
+from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel, getModelNames, getModelBlock, getBlockModelObject
+from flask import Flask, json, flash, request, redirect, url_for, Response, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
 from flask_api import status
 import json
 import csv
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -34,37 +35,11 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def show_blocks(name):
-    filename = name + "_blocks_reblock.csv"
-
-    if not os.path.exists(filename):
-        filename = name + "_blocks.csv"
-
-    with open(filename, 'r') as csv_file:
-        lines = csv_file.readlines()
-        offset = 3 + int(lines[3])
-
-        blocks = []
-        columns = []
-
-        for line in range(len(lines)):
-            block = {}
-            if line == 0:
-                columns = lines[line].strip().split(",")
-            elif line > offset:
-                current_block = lines[line].strip().split(",")
-                for i in range(len(columns)):
-                    if (str(columns[i]) == "id"):
-                        block['index'] = current_block[i]
-                    else:
-                        block[str(columns[i])] = current_block[i]
-                blocks.append(block)
-        return blocks
-
 @app.route('/')
 def hello():
     status_code = {status.HTTP_200_OK:  'OK'}
-    return status_code
+    
+    return requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json, status_code
 
 
 @app.route('/api/block_models/load_model/', methods=['GET', 'POST'])
@@ -106,42 +81,31 @@ def reblock_model(name, x, y, z):
 
 @app.route('/api/block_models/', methods=['GET'])
 def block_models():
-    directory = os.getcwd()
-    names = []
-
-    status_code = {status.HTTP_200_OK:  'OK'}
-
-    for filename in os.listdir(directory):
-        name_extension = []
-        if filename.endswith(".csv"):
-            names.append({ 'name': filename.split("_blocks")[0] })
-    return json.dumps(names), status_code
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
+    names = getModelNames()
+    if ff['restful_response']:
+        return json.dumps({'block_models': names})
+    return json.dumps(names)
 
 
-@app.route('/api/block_models/<name>/blocks/')
+@app.route('/api/block_models/<name>/blocks/', methods=['GET'])
 def loaded_blocks(name):
-    status_code = {status.HTTP_200_OK:  'OK'}
-    return json.dumps(show_blocks(name)), status_code
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
+    blocks = getBlockModelObject(name, ff['restful_response'])
+    return json.dumps(blocks)
 
 
-@app.route('/api/block_models/<name>/blocks/<index>/')
+@app.route('/api/block_models/<name>/blocks/<index>/', methods=['GET'])
 def index_block(name, index):
-    status_code = {status.HTTP_200_OK:  'OK'}
-    model = show_blocks(name)
-    for i in model:
-        print(i['index'])
-        if int(i['index']) == int(index):
-            block = i
-    return json.dumps({"block": block}), status_code
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
+    if ff['block_info']:
+        block = getModelBlock(name, index)
+        return json.dumps({"block": block})
 
 
 if __name__ == "__main__":
-    #app.run(port=8001)
-    
-    app.secret_key = 'super secret key'
-    app.config['SESSION_TYPE'] = 'filesystem'
-
-    app.run(port=5000)
+    app.run(port=8001)
+    #app.run(port=5000)
     if sys.argv[1] == '-L':
         print(loadModelArguments(sys.argv[2:]))
     elif sys.argv[1] == '-P':
