@@ -42,8 +42,8 @@ def index_block(name, index):
 
 
 if __name__ == "__main__":
-    #app.run(port=8001)
-    app.run(port=5000)
+    app.run(port=8001)
+    #app.run(port=5000)
     if sys.argv[1] == '-L':
         print(loadModelArguments(sys.argv[2:]))
     elif sys.argv[1] == '-P':
