@@ -14,12 +14,12 @@ CORS(app)
 @app.route('/')
 def hello():
     text = 'Hello World'
-    return requests.get('http://127.0.0.1:8001/api/feature_flags').json
+    return requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json
 
 
 @app.route('/api/block_models/', methods=['GET'])
 def block_models():
-    ff = requests.get('http://127.0.0.1:8001/api/feature_flags').json()
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     names = getModelNames()
     if ff['restful_response']:
         return json.dumps({'block_models': names})
@@ -28,14 +28,14 @@ def block_models():
 
 @app.route('/api/block_models/<name>/blocks/', methods=['GET'])
 def loaded_blocks(name):
-    ff = requests.get('http://127.0.0.1:8001/api/feature_flags').json()
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     blocks = getBlockModelObject(name, ff['restful_response'])
     return json.dumps(blocks)
 
 
 @app.route('/api/block_models/<name>/blocks/<index>/', methods=['GET'])
 def index_block(name, index):
-    ff = requests.get('http://127.0.0.1:8001/api/feature_flags').json()
+    ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     if ff['block_info']:
         block = getModelBlock(name, index)
         return json.dumps({"block": block})

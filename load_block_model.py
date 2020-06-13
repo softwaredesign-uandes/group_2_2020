@@ -339,6 +339,8 @@ def getModelNames():
         name_extension = []
         if filename.endswith("_blocks.csv"):
             names.append({ 'name': filename.split("_blocks")[0] })
+        elif filename.endswith('_reblock.csv'):
+            names.append({ 'name': filename.split("_blocks")[0] + '_reblocked' })
 
     return names
 
@@ -381,7 +383,10 @@ def getBlockModelObject(name, restful):
 
 
 def getBlockModel(name):
-    filename = name + "_blocks.csv"
+    if name.endswith('_reblocked'):
+        filename = name.split('_reblocked')[0] + "_blocks_reblock.csv"
+    else:
+        filename = name + "_blocks.csv"
 
     blockModel = CreateBlockModel(filename)
     nBlocks = printNumberOfBlocks(blockModel)
