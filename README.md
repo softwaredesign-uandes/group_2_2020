@@ -21,6 +21,15 @@ To run this tests just type in the command console the following command (be sur
 To be able to successfuly use the Web API, you have to first load the block models you want to use (refer to documentation on how to load block models into this application). 
 Reblocked models of the same model have priority over the original ones
 
+/api/block_models/load_model/ -> two files need to be uploaded through Postman. In the Body option, choose form-data and enter two files: with the key "columns" upload the columns file (.txt) and with the key "blocks", the model file (.blocks).
+
+IMPORTANT: the columns file must follow the following structure:
+    - first line: columns (attributes) of the model separated by comas.
+    - second line: classification of the attributes separated by comas. 0 = summable value, 1 = proportional value, 2 = mode.
+    - third line: column name of the mass.
+    - fourth line: integer representing the n amount of minerals.
+    - fifth to n-lines more: column name of the mineral, common name of the mineral and metric.
+
 # To Use:
 
 There are 6 main console commands that can be used in this program.
