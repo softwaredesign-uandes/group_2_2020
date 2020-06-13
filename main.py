@@ -2,7 +2,7 @@ import os
 import csv
 import sys, getopt
 from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel, getModelNames, getModelBlock, getBlockModelObject
-from flask import Flask, json, flash, request, redirect, url_for, Response, jsonify
+from flask import Flask, flash, request, redirect, url_for, Response, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
@@ -34,12 +34,6 @@ def handle_exception(e):
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/')
-def hello():
-    status_code = {status.HTTP_200_OK:  'OK'}
-    
-    return requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json, status_code
 
 
 @app.route('/api/block_models/load_model/', methods=['GET', 'POST'])
@@ -104,6 +98,8 @@ def index_block(name, index):
 
 
 if __name__ == "__main__":
+    app.secret_key = "SUPER SECRET KEY"
+    app.config['SESSION_TYPE'] = 'filesystem'
     app.run(port=8001)
     #app.run(port=5000)
     if sys.argv[1] == '-L':
