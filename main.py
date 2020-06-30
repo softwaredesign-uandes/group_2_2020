@@ -71,6 +71,9 @@ def load_prec_model(name):
             return redirect(request.url)
         if prec and allowed_file(prec.filename):
             prec_filename = secure_filename(prec.filename)
+            requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
+                          json={"trace": {"span_id": "<span_id>", "event_name": "block_model_precedences_loaded",
+                                          "event_data": prec_filename}})
             prec.save(os.path.join(app.config['UPLOAD_FOLDER'], prec_filename))
             return status_code
     return status_code
