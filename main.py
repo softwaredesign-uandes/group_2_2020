@@ -16,7 +16,7 @@ CORS(app)
 
 UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {'blocks', 'txt'}
+ALLOWED_EXTENSIONS = {'blocks', 'txt', 'prec'}
 
 @app.errorhandler(HTTPException)
 def handle_exception(e):
@@ -54,9 +54,27 @@ def load_block_model():
             columns_filename = secure_filename(columns.filename)
             columns.save(os.path.join(app.config['UPLOAD_FOLDER'], columns_filename))
             LoadBlockModel(blocks.filename, columns.filename)
+            requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
+                          json={"trace": {"span_id": "<span_id>", "event_name": "block_model_loaded",
+                                          "event_data": blocks_filename}})
             return status_code
     return status_code
-    
+
+
+@app.route('/api/block_models/<name>/load_prec', methods=['GET', 'POST'])
+def load_prec_model(name):
+    status_code = {status.HTTP_200_OK: 'OK'}
+    if request.method == 'POST':
+        prec = request.files['prec']
+        if prec.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if prec and allowed_file(prec.filename):
+            prec_filename = secure_filename(prec.filename)
+            prec.save(os.path.join(app.config['UPLOAD_FOLDER'], prec_filename))
+            return status_code
+    return status_code
+
 
 @app.route('/api/block_models/<name>/reblock/<x>/<y>/<z>', methods=['GET'])
 def reblock_model(name, x, y, z):
@@ -69,7 +87,9 @@ def reblock_model(name, x, y, z):
         inputfile = name + "_blocks.csv"
     
     apiReblockModel(inputfile, x, y, z)
-
+    requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
+                  json={"trace": {"span_id": "", "event_name": "block_model_reblocked",
+                                  "event_data": name}})
     return status_code
 
 
@@ -86,6 +106,9 @@ def block_models():
 def loaded_blocks(name):
     ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     blocks = getBlockModelObject(name, ff['restful_response'])
+    requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
+                  json={"trace": {"span_id": "", "event_name": "blocks_requested",
+                                  "event_data": name}})
     return json.dumps(blocks)
 
 
@@ -94,6 +117,9 @@ def index_block(name, index):
     ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     if ff['block_info']:
         block = getModelBlock(name, index)
+        requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
+                      json={"trace": {"span_id": "", "event_name": "block_info_requested",
+                                      "event_data": "<{}>,<{}>.<{}>".format(block['x'], block['y'], block['z'])}})
         return json.dumps({"block": block})
 
 
@@ -116,6 +142,9 @@ if __name__ == "__main__":
         print(attributeArguments(sys.argv[2:]))
     elif sys.argv[1] == '-R':
         print(reblockArguments(sys.argv[2:]))
+    elif sys.argv[1] == '-E':
+        print()
+        # print(extractArguments(sys.argv[2:]))
     else:
         print('\nAvailable commands:\n')
         print('main.py -L -i <inputfile> -c <columnsFile>')
