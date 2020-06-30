@@ -58,7 +58,10 @@ def load_block_model():
             LoadBlockModel(blocks.filename, columns.filename)
             spans = requests.get(
                 'https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/spans')
-            span_id = int(spans.json()['spans'][-1]['span_id'])+1
+            if len(spans.json()['spans']) != 0:
+                span_id = int(spans.json()['spans'][-1]['span_id'])+1
+            else:
+                span_id = 0
             requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                           json={"trace": {"span_id": span_id, "event_name": "block_model_loaded",
                                           "event_data": blocks_filename}})
