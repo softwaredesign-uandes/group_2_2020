@@ -137,7 +137,7 @@ def index_block(name, index):
 
 @app.route('/api/block_models/<name>/blocks/<index>/extract/', methods=['POST'])
 def extract_block(name, index):
-    global span_id
+    #global span_id
     filename = name + "_blocks.csv"
 
     block_model = CreateBlockModel(filename)
