@@ -1,7 +1,7 @@
 import os
 import csv
 import sys, getopt
-from load_block_model import loadModelArguments, AddPrecedenceToBlockModel, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel, getModelNames, getModelBlock, getBlockModelObject
+from load_block_model import *
 from flask import Flask, flash, request, redirect, url_for, Response, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
@@ -64,7 +64,7 @@ def load_block_model():
                 span_id = 0
             requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                           json={"trace": {"span_id": span_id, "event_name": "block_model_loaded",
-                                          "event_data": blocks_filename}})
+                                          "event_data": blocks.filename.split('.')[0]}})
             return status_code
     return status_code
 
@@ -136,15 +136,21 @@ def index_block(name, index):
                                       "event_data": "<{}>,<{}>.<{}>".format(block['x'], block['y'], block['z'])}})
         return json.dumps({"block": block})
 
-@app.route('/api/block_models/<name>/blocks/<index>/extract', methods=['GET'])
+@app.route('/api/block_models/<name>/blocks/<index>/extract/', methods=['POST'])
 def extract_block(name, index):
     global span_id
-    # Aqui la logica para utilizar la funcion
-    blo = {'x': 0, 'y': 0, 'z': 0}
+    filename = name + "_blocks.csv"
+
+    block_model = CreateBlockModel(filename)
+    AddPrecedenceToBlockModel(block_model, name)
+
+    selected_block = block_model.getBlockById(index)
+    extracted = extract(name, selected_block)
+    blo = {'x': selected_block.getValue("x"), 'y': selected_block.getValue("y"), 'z': selected_block.getValue("z")}
     requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                   json={"trace": {"span_id": span_id, "event_name": "block_info_requested",
-                                  "event_data": "<{}>,<{}>,<{}>".format(blo['x'], blo['y']. blo['z'])}})
-
+                                  "event_data": "<{}>,<{}>,<{}>".format(blo['x'], blo['y'], blo['z'])}})
+    return json.dumps({"blocks": extracted})
 
 if __name__ == "__main__":
     app.secret_key = "SUPER SECRET KEY"

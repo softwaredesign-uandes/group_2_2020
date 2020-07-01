@@ -1,7 +1,5 @@
-id,x,y,z,tonn,blockvalue,destination,Au (oz/ton),Ag (oz/ton),Cu %
-0,0,0,0,0,0,2,1,1,1
-<tonn>
-3
-Cu %,copper,%
-Au (oz/ton),gold,oz/ton
-Ag (oz/ton),silver,oz/ton
+id,x,y,z,type,grade,tonns,min_caf,value_extracc,value_proc,apriori_process
+0,0,0,0,2,1,0,0,0,0,0
+tonns
+1
+grade,gold,%

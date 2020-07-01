@@ -461,3 +461,29 @@ def getBlockModel(name):
         blocks.append(i)
     return blocks
 
+def extract(name, block):
+    if len(block.precedence) == 0:
+        return [{"index":  str(block.getValue("id"))}]
+    else:
+        extracted = []
+        extracted.append(block.getValue("id"))
+        extract_all(block, extracted)
+        
+        extracted = list(dict.fromkeys(extracted))
+
+        extracted_formated = []
+        for i in extracted:
+            extracted_formated.append({"index": str(i)})
+
+        return extracted_formated
+
+
+
+def extract_all(block, extracted):
+    for b in block.precedence:
+        extracted.append(b.getValue("id"))
+        for i in b.precedence:
+            extract_all(i, extracted)
+
+
+
