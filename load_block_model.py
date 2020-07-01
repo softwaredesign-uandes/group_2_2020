@@ -490,7 +490,7 @@ def extract_all(block, extracted):
 
 def getSpanId():
     spans = requests.get(
-        'https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/spans')
+        'https://gentle-coast-69723.herokuapp.com/api/apps/7f9e89aff60390d0f961b18788eff93c/spans')
     if len(spans.json()['spans']) != 0:
         return int(spans.json()['spans'][-1]['span_id'])
     else:
