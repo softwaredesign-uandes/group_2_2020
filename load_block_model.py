@@ -462,6 +462,8 @@ def getBlockModel(name):
     return blocks
 
 def extract(block):
+    if block is None:
+        return []
     if len(block.precedence) == 0:
         return [{"index":  str(block.getValue("id"))}]
     else:

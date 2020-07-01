@@ -63,3 +63,62 @@ class TestLoadBlockModel(unittest.TestCase):
 
     def test_load_block_model_when_file_created_return_a_1(self):
         self.assertEqual(LoadBlockModel("test_model_file.csv", "test_output.csv"), 1)
+
+    def test_extract_when_block_exists_return_array(self):
+        columns = ['id', 'x', 'y', 'z', 'tonn', 'destination', 'Au (oz/ton)', 'Ag [ppm]', 'Cu %']
+        classification = [0, 0, 0, 0, 0, 2, 1, 1, 1]
+        mass = "tonn"
+        minerals = {'copper': ['%', 'Cu %'], 'gold': ['oz/ton', 'Au (oz/ton)'], 'silver': ['ppm', 'Ag [ppm>']}
+        block_1 = Block(columns, mass, minerals, [0, 0, 0, 0, 5300, 1, 0.1, 0.0009999999999999998, 10.0],
+                        classification)
+        block_2 = Block(columns, mass, minerals, [2, 0, 0, 2, 1700, 1, 0.1, 0.001, 10.0], classification)
+        block_3 = Block(columns, mass, minerals, [8, 0, 2, 0, 4400, 1, 0.1, 0.001, 10.0], classification)
+        block_4 = Block(columns, mass, minerals, [10, 0, 2, 2, 6200, 2, 0.1, 0.0009999999999999998, 10.0],
+                        classification)
+        block_1.precedence.append(block_2)
+        block_1.precedence.append(block_3)
+        block_1.precedence.append(block_4)
+        block_2.precedence.append(block_3)
+        block_3.precedence.append(block_4)
+
+        expected = [{"index": '0'}, {"index": '2'}, {"index": '8'}, {"index": '10'}]
+
+        self.assertEquals(extract(block_1), expected)
+
+    def test_extract_when_block_does_not_exist_return_empty_array(self):
+        self.assertEquals(extract(None), [])
+
+    def test_extract_when_precedence_is_empty(self):
+        columns = ['id', 'x', 'y', 'z', 'tonn', 'destination', 'Au (oz/ton)', 'Ag [ppm]', 'Cu %']
+        classification = [0, 0, 0, 0, 0, 2, 1, 1, 1]
+        mass = "tonn"
+        minerals = {'copper': ['%', 'Cu %'], 'gold': ['oz/ton', 'Au (oz/ton)'], 'silver': ['ppm', 'Ag [ppm>']}
+        block_1 = Block(columns, mass, minerals, [0, 0, 0, 0, 5300, 1, 0.1, 0.0009999999999999998, 10.0],
+                        classification)
+
+        expected = [{"index": '0'}]
+
+        self.assertEquals(extract(block_1), expected)
+
+    def test_extract_when_precedence_is_linear(self):
+        
+        columns = ['id', 'x', 'y', 'z', 'tonn', 'destination', 'Au (oz/ton)', 'Ag [ppm]', 'Cu %']
+        classification = [0, 0, 0, 0, 0, 2, 1, 1, 1]
+        mass = "tonn"
+        minerals = {'copper': ['%', 'Cu %'], 'gold': ['oz/ton', 'Au (oz/ton)'], 'silver': ['ppm', 'Ag [ppm>']}
+        block_1 = Block(columns, mass, minerals, [0, 0, 0, 0, 5300, 1, 0.1, 0.0009999999999999998, 10.0],
+                        classification)
+        block_2 = Block(columns, mass, minerals, [2, 0, 0, 2, 1700, 1, 0.1, 0.001, 10.0], classification)
+        block_3 = Block(columns, mass, minerals, [8, 0, 2, 0, 4400, 1, 0.1, 0.001, 10.0], classification)
+        block_4 = Block(columns, mass, minerals, [10, 0, 2, 2, 6200, 2, 0.1, 0.0009999999999999998, 10.0],
+                        classification)
+        block_1.precedence.append(block_2)
+        block_2.precedence.append(block_3)
+        block_3.precedence.append(block_4)
+
+        expected = [{"index": '0'}, {"index": '2'}, {"index": '8'}, {"index": '10'}]
+
+        self.assertEquals(extract(block_1), expected)
+
+if __name__ == '__main__':
+    unittest.main()
