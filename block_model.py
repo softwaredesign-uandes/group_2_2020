@@ -30,6 +30,22 @@ class BlockModel:
         else:
             return block
 
+    def getBlockById(self, id):
+        
+        id_column_index = 0
+        i = 0
+        while i < len(self.columns):
+            if "id" in self.columns[i].lower():
+                id_column_index = i
+                break
+            i += 1
+
+        for block in self.blocks:
+            if block.values[id_column_index] == id:
+                return block
+        
+        return None
+
     def reBlock(self, rx, ry, rz):
         if invalidParameters([rx, ry, rz]):
             return "Invalid parameters"

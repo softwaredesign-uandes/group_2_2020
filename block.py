@@ -5,6 +5,7 @@ class Block:
         self.minerals = minerals
         self.values = values
         self.classification = classification
+        self.precedence = []
 
     #Fix this with new parameters
     def __eq__(self, other):

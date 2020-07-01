@@ -1,7 +1,7 @@
 import os
 import csv
 import sys, getopt
-from load_block_model import loadModelArguments, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel, getModelNames, getModelBlock, getBlockModelObject
+from load_block_model import loadModelArguments, AddPrecedenceToBlockModel, printModelArguments, numberOfBlocksArguments, massInKilogramsArgument, gradeInPercentageArguments, attributeArguments, reblockArguments, LoadBlockModel, CreateBlockModel, apiReblockModel, getModelNames, getModelBlock, getBlockModelObject
 from flask import Flask, flash, request, redirect, url_for, Response, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
