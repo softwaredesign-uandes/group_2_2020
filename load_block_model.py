@@ -179,21 +179,21 @@ def CreateBlockModel(input_name):
                 block_map[block_x][block_y][block_z] = block
     return BlockModel(columns, blocks, block_map)
 
-def AddPrecedenceToBlockModel(block_model, file_name):
-        precedence_file = open(file_name)
+def AddPrecedenceToBlockModel(block_model, block_model_name):
+    precedence_file = open(block_model_name + ".prec")
 
-        for line in precedence_file:
-            line = line.strip().split()
+    for line in precedence_file:
+        line = line.strip().split()
 
-            precedence_amount = int(line[1])
-            if precedence_amount == 0:
-                continue
+        precedence_amount = int(line[1])
+        if precedence_amount == 0:
+            continue
 
-            block = block_model.getBlockById(line[0])
-            for i in range(precedence_amount):
-                precedence_block = block_model.getBlockById(line[2+i])
-                if precedence_block is not None and precedence_block not in block.precedence:
-                    block.precedence.append(precedence_block)
+        block = block_model.getBlockById(line[0])
+        for i in range(precedence_amount):
+            precedence_block = block_model.getBlockById(line[2+i])
+            if precedence_block is not None and precedence_block not in block.precedence:
+                block.precedence.append(precedence_block)
 
 
 def LoadBlockModel(input_name, columns_name):
