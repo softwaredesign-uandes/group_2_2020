@@ -1,6 +1,8 @@
 import os
 import csv
 import sys, getopt
+import requests
+import json
 from block import Block
 from block_model import BlockModel
 from collections import defaultdict
@@ -477,14 +479,20 @@ def extract(block):
 
         return extracted_formated
 
-
-
 def extract_all(block, extracted):
     #for b in block.precedence:
     extracted.append(block.getValue("id"))
     for i in block.precedence:
         if i.getValue("id") not in extracted:
             extract_all(i, extracted)
+
+def getSpanId():
+    spans = requests.get(
+        'https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/spans')
+    if len(spans.json()['spans']) != 0:
+        return int(spans.json()['spans'][-1]['span_id'])
+    else:
+        return 0
 
 
 

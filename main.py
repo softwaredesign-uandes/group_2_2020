@@ -13,7 +13,7 @@ import requests
 
 app = Flask(__name__)
 CORS(app)
-span_id = None
+#span_id = None
 
 UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -39,7 +39,7 @@ def allowed_file(filename):
 
 @app.route('/api/block_models/load_model/', methods=['GET', 'POST'])
 def load_block_model():
-    global span_id
+    #global span_id
     status_code = {status.HTTP_200_OK:  'OK'}
     if request.method == 'POST':
         if 'blocks' not in request.files or 'columns' not in request.files:
@@ -56,12 +56,7 @@ def load_block_model():
             columns_filename = secure_filename(columns.filename)
             columns.save(os.path.join(app.config['UPLOAD_FOLDER'], columns_filename))
             LoadBlockModel(blocks.filename, columns.filename)
-            spans = requests.get(
-                'https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/spans')
-            if len(spans.json()['spans']) != 0:
-                span_id = int(spans.json()['spans'][-1]['span_id'])+1
-            else:
-                span_id = 0
+            span_id = getSpanId() + 1
             requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                           json={"trace": {"span_id": span_id, "event_name": "block_model_loaded",
                                           "event_data": blocks.filename.split('.')[0]}})
@@ -71,7 +66,7 @@ def load_block_model():
 
 @app.route('/api/block_models/<name>/load_prec', methods=['GET', 'POST'])
 def load_prec_model(name):
-    global span_id
+    #global span_id
     status_code = {status.HTTP_200_OK: 'OK'}
     if request.method == 'POST':
         prec = request.files['prec']
@@ -80,9 +75,10 @@ def load_prec_model(name):
             return redirect(request.url)
         if prec and allowed_file(prec.filename):
             prec_filename = secure_filename(prec.filename)
+            span_id = getSpanId()
             requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                           json={"trace": {"span_id": span_id, "event_name": "block_model_precedences_loaded",
-                                          "event_data": prec_filename}})
+                                          "event_data": prec.filename.split('.')[0]}})
             prec.save(os.path.join(app.config['UPLOAD_FOLDER'], prec_filename))
             return status_code
     return status_code
@@ -90,7 +86,7 @@ def load_prec_model(name):
 
 @app.route('/api/block_models/<name>/reblock/<x>/<y>/<z>', methods=['GET'])
 def reblock_model(name, x, y, z):
-    global span_id
+    #global span_id
     status_code = {status.HTTP_200_OK:  'OK'}
 
     inputfile = name + "_blocks_reblock.csv"
@@ -99,6 +95,7 @@ def reblock_model(name, x, y, z):
         inputfile = name + "_blocks.csv"
     
     apiReblockModel(inputfile, x, y, z)
+    span_id = getSpanId()
     requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                   json={"trace": {"span_id": span_id, "event_name": "block_model_reblocked",
                                   "event_data": name}})
@@ -116,9 +113,10 @@ def block_models():
 
 @app.route('/api/block_models/<name>/blocks/', methods=['GET'])
 def loaded_blocks(name):
-    global span_id
+    #global span_id
     ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     blocks = getBlockModelObject(name, ff['restful_response'])
+    span_id = getSpanId()
     requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                   json={"trace": {"span_id": span_id, "event_name": "blocks_requested",
                                   "event_data": name}})
@@ -127,13 +125,14 @@ def loaded_blocks(name):
 
 @app.route('/api/block_models/<name>/blocks/<index>/', methods=['GET'])
 def index_block(name, index):
-    global span_id
+    #global span_id
     ff = requests.get('https://dry-brushlands-69779.herokuapp.com/api/feature_flags/').json()
     if ff['block_info']:
         block = getModelBlock(name, index)
+        span_id = getSpanId()
         requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                       json={"trace": {"span_id": span_id, "event_name": "block_info_requested",
-                                      "event_data": "<{}>,<{}>.<{}>".format(block['x'], block['y'], block['z'])}})
+                                      "event_data": "<{}>,<{}>,<{}>".format(block['x'], block['y'], block['z'])}})
         return json.dumps({"block": block})
 
 @app.route('/api/block_models/<name>/blocks/<index>/extract/', methods=['POST'])
@@ -147,8 +146,9 @@ def extract_block(name, index):
     selected_block = block_model.getBlockById(index)
     extracted = extract(selected_block)
     blo = {'x': selected_block.getValue("x"), 'y': selected_block.getValue("y"), 'z': selected_block.getValue("z")}
+    span_id = getSpanId()
     requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
-                  json={"trace": {"span_id": span_id, "event_name": "block_info_requested",
+                  json={"trace": {"span_id": span_id, "event_name": "block_extracted",
                                   "event_data": "<{}>,<{}>,<{}>".format(blo['x'], blo['y'], blo['z'])}})
     return json.dumps({"blocks": extracted})
 
