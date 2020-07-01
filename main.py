@@ -145,7 +145,7 @@ def extract_block(name, index):
     AddPrecedenceToBlockModel(block_model, name)
 
     selected_block = block_model.getBlockById(index)
-    extracted = extract(name, selected_block)
+    extracted = extract(selected_block)
     blo = {'x': selected_block.getValue("x"), 'y': selected_block.getValue("y"), 'z': selected_block.getValue("z")}
     requests.post('https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/traces/',
                   json={"trace": {"span_id": span_id, "event_name": "block_info_requested",
