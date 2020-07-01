@@ -23,6 +23,8 @@ Reblocked models of the same model have priority over the original ones
 
 /api/block_models/load_model/ -> two files need to be uploaded through Postman. In the Body option, choose form-data and enter two files: with the key "columns" upload the columns file (.txt) and with the key "blocks", the model file (.blocks).
 
+/api/block_models/{ModelName}/load_prec -> one file needs to be uploaded through Postman. In the Body option, choose form-data and enter one file: with the key "prec" upload the precedents file (.prec).
+
 IMPORTANT: the columns file must follow the following structure:  
 - first line: columns (attributes) of the model separated by comas.  
 - second line: classification of the attributes separated by comas. 0 = summable value, 1 = proportional value, 2 = mode.  

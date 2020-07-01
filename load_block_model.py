@@ -1,6 +1,8 @@
 import os
 import csv
 import sys, getopt
+import requests
+import json
 from block import Block
 from block_model import BlockModel
 from collections import defaultdict
@@ -178,6 +180,23 @@ def CreateBlockModel(input_name):
                     block_z = str(block_values[columns.index("<z>")])
                 block_map[block_x][block_y][block_z] = block
     return BlockModel(columns, blocks, block_map)
+
+def AddPrecedenceToBlockModel(block_model, block_model_name):
+    precedence_file = open(block_model_name + ".prec")
+
+    for line in precedence_file:
+        line = line.strip().split()
+
+        precedence_amount = int(line[1])
+        if precedence_amount == 0:
+            continue
+
+        block = block_model.getBlockById(line[0])
+        for i in range(precedence_amount):
+            precedence_block = block_model.getBlockById(line[2+i])
+            if precedence_block is not None and precedence_block not in block.precedence:
+                block.precedence.append(precedence_block)
+
 
 def LoadBlockModel(input_name, columns_name):
     print("loading...")
@@ -443,3 +462,39 @@ def getBlockModel(name):
     for i in blockModel.blocks:
         blocks.append(i)
     return blocks
+
+def extract(block):
+    if block is None:
+        return []
+    if len(block.precedence) == 0:
+        return [{"index":  str(block.getValue("id"))}]
+    else:
+        extracted = []
+        #extracted.append(block.getValue("id"))
+        extract_all(block, extracted)
+        
+        extracted = list(dict.fromkeys(extracted))
+
+        extracted_formated = []
+        for i in extracted:
+            extracted_formated.append({"index": str(i)})
+
+        return extracted_formated
+
+def extract_all(block, extracted):
+    #for b in block.precedence:
+    extracted.append(block.getValue("id"))
+    for i in block.precedence:
+        if i.getValue("id") not in extracted:
+            extract_all(i, extracted)
+
+def getSpanId():
+    spans = requests.get(
+        'https://gentle-coast-69723.herokuapp.com/api/apps/efd22a06b2110e39cdd1031c7fbc48bb/spans')
+    if len(spans.json()['spans']) != 0:
+        return int(spans.json()['spans'][-1]['span_id'])
+    else:
+        return 0
+
+
+
